@@ -1,0 +1,255 @@
+{
+  "schemaVersion": "1.3",
+  "updatedAt": "2026-02-20",
+  "notes": "Directorio de equipo para app de calificación. Se permiten múltiples registros por persona (distintos roles/funciones) usando el mismo personId. El frontend (rate.js) fusiona por personId para mostrar una sola tarjeta; Firestore guarda reviews por personId.",
+  "people": [
+    {
+      "id": "camila-rodriguez_admin",
+      "personId": "camila-rodriguez",
+      "name": "Camila Rodríguez",
+      "role": "Asistente Administrativa",
+      "section": "administrativo",
+      "sectionLabel": "Administrativo",
+      "subarea": "Coordinación",
+      "photo": "Camila Rodriguez.jpg",
+      "tags": [
+        "Programación de clases",
+        "Gestión de agenda"
+      ]
+    },
+    {
+      "id": "liceth-rincon_admin",
+      "personId": "liceth-rincon",
+      "name": "Liceth Rincón",
+      "role": "Asistente Comercial",
+      "section": "administrativo",
+      "sectionLabel": "Administrativo",
+      "subarea": "Comercial",
+      "photo": "Liceth Rincon.png",
+      "tags": [
+        "Atención a clientes",
+        "Seguimiento comercial",
+        "Cierres",
+        "WhatsApp"
+      ]
+    },
+    {
+      "id": "soraya-castro_admin",
+      "personId": "soraya-castro",
+      "name": "Soraya Castro",
+      "role": "Contadora",
+      "section": "administrativo",
+      "sectionLabel": "Administrativo",
+      "subarea": "Contabilidad",
+      "photo": "Soraya Castro.jpg",
+      "tags": [
+        "Finanzas",
+        "Parafiscales",
+        "Impuestos"
+      ]
+    },
+    {
+      "id": "nancy-caballero_admin",
+      "personId": "nancy-caballero",
+      "name": "Nancy Caballero",
+      "role": "Aseo y organización",
+      "section": "administrativo",
+      "sectionLabel": "Administrativo",
+      "subarea": "Servicios Generales",
+      "photo": "Nancy Caballero.jpg",
+      "tags": [
+        "Limpieza",
+        "Orden de salones",
+        "Logística"
+      ]
+    },
+    {
+      "id": "alek-caballero_admin",
+      "personId": "alek-caballero",
+      "name": "Alek Caballero",
+      "role": "Coordinador General",
+      "section": "administrativo",
+      "sectionLabel": "Administrativo",
+      "subarea": "Coordinación",
+      "photo": "Alek Caballero.jpg",
+      "tags": [
+        "Dirección general",
+        "Alianzas",
+        "Gestión de proyectos"
+      ]
+    },
+    {
+      "id": "catalina-medina_admin",
+      "personId": "catalina-medina",
+      "name": "Catalina Medina",
+      "role": "Coordinadora Académica",
+      "section": "administrativo",
+      "sectionLabel": "Administrativo",
+      "subarea": "Coordinación",
+      "photo": "Catalina Medina.jpg",
+      "tags": [
+        "Currículo",
+        "Acompañamiento docente",
+        "Calidad académica"
+      ]
+    },
+
+    {
+      "id": "emily-bejarano_musica",
+      "personId": "emily-bejarano",
+      "name": "Emily Bejarano",
+      "role": "Docente de música",
+      "section": "docentes-musica",
+      "sectionLabel": "Docente · Música",
+      "subarea": "",
+      "photo": "Emily Bejarano.jpg",
+      "tags": [
+        "Clarinete",
+        "Flauta traversa",
+        "Flauta dulce soprano",
+        "Piano",
+        "Iniciación musical",
+        "Guitarra",
+        "Ukelele"
+      ]
+    },
+    {
+      "id": "alek-caballero_musica",
+      "personId": "alek-caballero",
+      "name": "Alek Caballero",
+      "role": "Docente de música",
+      "section": "docentes-musica",
+      "sectionLabel": "Docente · Música",
+      "subarea": "",
+      "photo": "Alek Caballero.jpg",
+      "tags": [
+        "Guitarra",
+        "Piano",
+        "Ukelele",
+        "Bajo eléctrico",
+        "Violín",
+        "Canto",
+        "Cello",
+        "Batería",
+        "Viola",
+        "Iniciación musical",
+        "Flauta dulce soprano"
+      ]
+    },
+    {
+      "id": "catalina-medina_musica",
+      "personId": "catalina-medina",
+      "name": "Catalina Medina",
+      "role": "Docente de música",
+      "section": "docentes-musica",
+      "sectionLabel": "Docente · Música",
+      "subarea": "",
+      "photo": "Catalina Medina.jpg",
+      "tags": [
+        "Guitarra",
+        "Piano",
+        "Ukelele",
+        "Bajo eléctrico",
+        "Violín",
+        "Canto",
+        "Cello",
+        "Batería",
+        "Viola",
+        "Iniciación musical",
+        "Flauta dulce soprano"
+      ]
+    },
+    {
+      "id": "laura-sanchez_musica",
+      "personId": "laura-sanchez",
+      "name": "Laura Sánchez",
+      "role": "Docente de música",
+      "section": "docentes-musica",
+      "sectionLabel": "Docente · Música",
+      "subarea": "",
+      "photo": "Laura Sánchez.jpg",
+      "tags": [
+        "Piano",
+        "Bajo",
+        "Iniciación musical"
+      ]
+    },
+
+    {
+      "id": "angie-nitola_artes",
+      "personId": "angie-nitola",
+      "name": "Angie Natalia Nitola",
+      "role": "Docente de Artes plásticas",
+      "section": "docentes-artes",
+      "sectionLabel": "Docente · Artes plásticas",
+      "subarea": "",
+      "photo": "Angie Nitola.jpg",
+      "tags": [
+        "Dibujo",
+        "Composición",
+        "Materiales"
+      ]
+    },
+    {
+      "id": "laura-sanchez_artes",
+      "personId": "laura-sanchez",
+      "name": "Laura Sánchez",
+      "role": "Docente de Artes plásticas",
+      "section": "docentes-artes",
+      "sectionLabel": "Docente · Artes plásticas",
+      "subarea": "",
+      "photo": "Laura Sánchez.jpg",
+      "tags": [
+        "Dibujo",
+        "Pintura",
+        "Composición"
+      ]
+    },
+
+    {
+      "id": "angie-nitola_teatro",
+      "personId": "angie-nitola",
+      "name": "Angie Natalia Nitola",
+      "role": "Actuación y expresión corporal",
+      "section": "docentes-teatro",
+      "sectionLabel": "Docente · Teatro",
+      "subarea": "",
+      "photo": "Angie Nitola.jpg",
+      "tags": [
+        "Impro",
+        "Juego dramático"
+      ]
+    },
+
+    {
+      "id": "angie-nitola_danzas",
+      "personId": "angie-nitola",
+      "name": "Angie Natalia Nitola",
+      "role": "Docente de Danzas",
+      "section": "docentes-danzas",
+      "sectionLabel": "Docente · Danzas",
+      "subarea": "",
+      "photo": "Angie Nitola.jpg",
+      "tags": [
+        "Coreografía",
+        "Folclor",
+        "Hip hop"
+      ]
+    },
+    {
+      "id": "laura-sanchez_danzas",
+      "personId": "laura-sanchez",
+      "name": "Laura Sánchez",
+      "role": "Docente de Danzas",
+      "section": "docentes-danzas",
+      "sectionLabel": "Docente · Danzas",
+      "subarea": "",
+      "photo": "Laura Sánchez.jpg",
+      "tags": [
+        "Ritmo",
+        "Coordinación",
+        "Expresión corporal"
+      ]
+    }
+  ]
+}

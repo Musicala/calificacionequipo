@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light" />
+
+  <title>Admin · Calificaciones · Musicala</title>
+  <meta name="description" content="Panel interno para revisar calificaciones y comentarios del equipo de Musicala." />
+  <meta name="theme-color" content="#0C41C4" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="./styles.css" />
+
+  <!-- Admin-only styles (ideal: mover a styles.css) -->
+  <style>
+    /* Layout */
+    .adminWrap{ padding-top:14px; padding-bottom:28px; }
+    .adminCard{ padding:16px; }
+    .adminTopRow{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      flex-wrap:wrap;
+      justify-content:space-between;
+      margin-bottom:12px;
+    }
+    .adminControls{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+
+    /* Status pill */
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding:9px 12px;
+      border:1px solid rgba(12,10,30,.10);
+      border-radius:999px;
+      background: rgba(255,255,255,.92);
+      box-shadow: 0 1px 0 rgba(12,10,30,.03);
+    }
+    .muted2{ color: rgba(0,0,0,.62); }
+    .badgeMini{
+      display:inline-flex;
+      align-items:center;
+      padding:4px 10px;
+      border-radius:999px;
+      border:1px solid rgba(12,10,30,.10);
+      background:#fff;
+      font-weight:900;
+      font-size:12px;
+      letter-spacing:.2px;
+    }
+
+    /* Inputs (match style.css vibe) */
+    .adminInput{
+      height: var(--control-h);
+      padding: 0 12px;
+      border: 1px solid rgba(12,10,30,.10);
+      border-radius: var(--control-r);
+      background: rgba(255,255,255,.88);
+      box-shadow: 0 1px 0 rgba(12,10,30,.03);
+      outline: 0;
+      transition: border-color .2s var(--ease), box-shadow .2s var(--ease), background .2s var(--ease);
+      width: min(360px, 70vw);
+    }
+    .adminInput::placeholder{ color: rgba(35,35,35,.45); }
+    .adminInput:focus{
+      border-color: rgba(12,65,196,.35);
+      box-shadow: 0 0 0 4px rgba(12,65,196,.10);
+      background: #fff;
+    }
+
+    .adminSelect{
+      height: var(--control-h);
+      padding: 0 38px 0 12px;
+      border: 1px solid rgba(12,10,30,.10);
+      border-radius: var(--control-r);
+      background: rgba(255,255,255,.88);
+      box-shadow: 0 1px 0 rgba(12,10,30,.03);
+      font-weight:900;
+      cursor:pointer;
+      outline:0;
+      appearance:none;
+      -webkit-appearance:none;
+      transition: border-color .2s var(--ease), box-shadow .2s var(--ease), background .2s var(--ease);
+    }
+    .adminSelect:focus{
+      border-color: rgba(12,65,196,.35);
+      box-shadow: 0 0 0 4px rgba(12,65,196,.10);
+      background: #fff;
+    }
+    .selectWrap{
+      position:relative;
+      display:inline-flex;
+      align-items:center;
+    }
+    .selectWrap::after{
+      content:"▾";
+      position:absolute;
+      right:12px;
+      pointer-events:none;
+      font-weight:900;
+      color: rgba(0,0,0,.55);
+      transform: translateY(-1px);
+    }
+
+    /* Summary row */
+    .summaryRow{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      margin-bottom: 10px;
+    }
+
+    /* KPIs */
+    .kpis{
+      display:grid;
+      grid-template-columns:repeat(12,1fr);
+      gap:12px;
+      margin-top:12px;
+      margin-bottom:12px;
+    }
+    .kpi{
+      grid-column:span 3;
+      background:#fff;
+      border:1px solid rgba(12,10,30,.08);
+      border-radius:16px;
+      padding:12px 14px;
+      box-shadow: 0 10px 24px rgba(12,10,30,.06);
+    }
+    .kpi h3{
+      margin:0;
+      font-size:12px;
+      color:rgba(0,0,0,.55);
+      font-weight:900;
+      letter-spacing:.2px;
+    }
+    .kpi p{
+      margin:6px 0 0;
+      font-size:20px;
+      font-weight:900;
+      letter-spacing:.2px;
+    }
+    @media (max-width: 900px){ .kpi{grid-column:span 6;} }
+    @media (max-width: 520px){ .kpi{grid-column:span 12;} }
+
+    /* Two panel layout */
+    .split{
+      display:grid;
+      grid-template-columns: 1.05fr .95fr;
+      gap: 14px;
+      margin-top: 12px;
+    }
+    @media (max-width: 980px){ .split{grid-template-columns:1fr;} }
+
+    .sectionTitle{
+      display:flex;
+      align-items:baseline;
+      justify-content:space-between;
+      gap:10px;
+      margin: 6px 0 10px;
+    }
+    .sectionTitle h2{
+      margin:0;
+      font-size:14px;
+      font-weight:900;
+      letter-spacing:.2px;
+    }
+    .mini{ font-size:12px; color:rgba(0,0,0,.55); font-weight:800; }
+
+    /* Tables */
+    .tableWrap{
+      overflow:auto;
+      border:1px solid rgba(12,10,30,.08);
+      border-radius:14px;
+      background:#fff;
+      box-shadow: 0 1px 0 rgba(12,10,30,.02);
+    }
+    table{ width:100%; border-collapse:collapse; background:#fff; }
+    th,td{ padding:10px 12px; vertical-align:top; border-bottom:1px solid rgba(12,10,30,.06); }
+    th{
+      position:sticky;
+      top:0;
+      z-index:2;
+      background: linear-gradient(180deg, #fbfdff, #f7faff);
+      text-align:left;
+      font-weight:900;
+      border-bottom:1px solid rgba(12,10,30,.10);
+    }
+    tbody tr:nth-child(even) td{ background: rgba(12,65,196,.02); }
+    tbody tr:hover td{ background: rgba(12,65,196,.05); }
+
+    code{ font-weight:900; }
+    .starsTxt{ font-weight:900; }
+
+    /* Footer message */
+    .adminMsg{
+      margin-top:10px;
+      font-weight:900;
+    }
+
+    /* Boot error */
+    #bootError[hidden]{ display:none!important; }
+    #bootError{
+      margin:14px auto 0;
+      max-width:1100px;
+      padding:14px;
+      border-radius:16px;
+      border:1px solid rgba(220,38,38,.25);
+      background:rgba(220,38,38,.06);
+    }
+    #bootError h2{ margin:0 0 6px; font-size:15px; }
+    #bootError p{ margin:0; color:rgba(0,0,0,.72); }
+  </style>
+</head>
+
+<body>
+  <noscript>
+    <div id="bootError">
+      <h2>⚠️ Falta activar JavaScript</h2>
+      <p>Este panel necesita JavaScript para iniciar sesión y cargar datos.</p>
+    </div>
+  </noscript>
+
+  <div id="bootError" hidden>
+    <h2>⚠️ No se pudo cargar el panel</h2>
+    <p>Revisa que existan <code>firebase.js</code> y <code>admin.js</code> en la raíz del proyecto.</p>
+  </div>
+
+  <header class="topbar">
+    <div class="wrap topbar__inner">
+      <div class="brand">
+        <img src="./assets/logo.png" alt="Logo Musicala" class="brand__logo" />
+        <div class="brand__text">
+          <h1>Admin · Calificaciones</h1>
+          <p class="muted">Acceso restringido. Solo correos autorizados.</p>
+        </div>
+      </div>
+
+      <div class="adminControls">
+        <button id="btnLogin" class="btn" type="button">Iniciar sesión</button>
+        <button id="btnLogout" class="btn btn--ghost" type="button" hidden>Cerrar sesión</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap adminWrap">
+    <!-- Top row: estado + controles -->
+    <div class="adminTopRow">
+      <div class="pill" aria-label="Estado de autenticación">
+        <span class="badgeMini">Estado</span>
+        <span id="authState" class="muted2">No has iniciado sesión.</span>
+      </div>
+
+      <div class="adminControls">
+        <input
+          id="filterPerson"
+          class="adminInput"
+          type="search"
+          placeholder="Filtrar por personId o nombre…"
+          aria-label="Filtrar"
+          autocomplete="off"
+        />
+
+        <div class="selectWrap" aria-label="Rango de días">
+          <select id="rangeDays" class="adminSelect">
+            <option value="0">Todo</option>
+            <option value="7">Últimos 7 días</option>
+            <option value="30">Últimos 30 días</option>
+            <option value="90">Últimos 90 días</option>
+          </select>
+        </div>
+
+        <button id="btnExport" class="btn btn--ghost" type="button" title="Exportar CSV">Exportar CSV</button>
+        <button id="btnReload" class="btn btn--ghost" type="button">Recargar</button>
+      </div>
+    </div>
+
+    <section class="card adminCard">
+      <div class="summaryRow">
+        <span class="badgeMini">Vista</span>
+        <span id="summary" class="muted2">Inicia sesión para ver datos.</span>
+      </div>
+
+      <div class="kpis" id="kpis" aria-label="Indicadores" style="display:none;">
+        <div class="kpi"><h3>Total evaluaciones</h3><p id="kpiTotal">0</p></div>
+        <div class="kpi"><h3>Promedio general</h3><p id="kpiAvg">0.0</p></div>
+        <div class="kpi"><h3>% con comentario</h3><p id="kpiWithComment">0%</p></div>
+        <div class="kpi"><h3>Evaluaciones recientes</h3><p id="kpiRecent">0</p></div>
+      </div>
+
+      <div class="split">
+        <div>
+          <div class="sectionTitle">
+            <h2>Ranking por persona</h2>
+            <span class="mini">Promedio + cantidad + última fecha</span>
+          </div>
+
+          <div class="tableWrap">
+            <table aria-label="Tabla de agregados por persona">
+              <thead>
+                <tr>
+                  <th style="min-width:220px;">Persona</th>
+                  <th style="min-width:120px;">personId</th>
+                  <th style="min-width:110px;">Promedio</th>
+                  <th style="min-width:90px;">#</th>
+                  <th style="min-width:170px;">Última</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyAgg"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div>
+          <div class="sectionTitle">
+            <h2>Últimos comentarios</h2>
+            <span class="mini">Solo los que traen texto</span>
+          </div>
+
+          <div class="tableWrap">
+            <table aria-label="Tabla de comentarios recientes">
+              <thead>
+                <tr>
+                  <th style="min-width:170px;">Fecha</th>
+                  <th style="min-width:220px;">Persona</th>
+                  <th style="min-width:90px;">⭐</th>
+                  <th style="min-width:380px;">Comentario</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyComments"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="sectionTitle" style="margin-top:14px;">
+        <h2>Registro crudo</h2>
+        <span class="mini">Para auditoría. Aquí está todo.</span>
+      </div>
+
+      <div class="tableWrap" style="margin-top:10px;">
+        <table aria-label="Tabla de calificaciones">
+          <thead>
+            <tr>
+              <th style="min-width:150px;">Fecha</th>
+              <th style="min-width:220px;">Persona</th>
+              <th style="min-width:140px;">personId</th>
+              <th style="min-width:90px;">⭐</th>
+              <th style="min-width:420px;">Comentario</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+
+      <div id="msg" class="adminMsg"></div>
+    </section>
+  </main>
+
+  <script type="module">
+    const boot = document.getElementById("bootError");
+    try{
+      await import("./admin.js");
+      boot.hidden = true;
+    }catch(err){
+      console.error(err);
+      boot.hidden = false;
+    }
+  </script>
+</body>
+</html>

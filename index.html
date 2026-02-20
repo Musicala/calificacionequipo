@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light" />
+
+  <title>Evaluación de experiencia · Musicala</title>
+  <meta name="description" content="Comparte tu experiencia con el equipo de Musicala. Evaluación anónima y confidencial." />
+  <meta name="theme-color" content="#0C41C4" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="./styles.css" />
+
+  <!-- Accesibilidad + fallbacks mínimos -->
+  <style>
+    .skiplink{
+      position:absolute; left:-9999px; top:auto; width:1px; height:1px; overflow:hidden;
+    }
+    .skiplink:focus{
+      left:12px; top:12px; width:auto; height:auto; padding:10px 12px;
+      background:#fff; border:1px solid rgba(0,0,0,.18); border-radius:12px; z-index:9999;
+      box-shadow:0 12px 30px rgba(0,0,0,.12);
+    }
+    #bootError[hidden]{ display:none !important; }
+    #bootError{
+      margin:14px auto 0; max-width:1100px;
+      padding:14px; border-radius:16px;
+      border:1px solid rgba(220,38,38,.25);
+      background:rgba(220,38,38,.06);
+    }
+    #bootError h2{ margin:0 0 6px; font-size:15px; }
+    #bootError p{ margin:0; color:rgba(0,0,0,.72); }
+    #bootError code{ font-weight:800; }
+  </style>
+
+  <!-- Estilos específicos rating (se mantienen, pero más ordenados) -->
+  <style>
+    .hint{font-size:14px;color:var(--muted);margin:6px 0 0}
+    .stars{display:flex;gap:8px;margin:10px 0 12px;flex-wrap:wrap}
+    .starBtn{
+      width:44px;height:44px;border-radius:12px;border:1px solid #e5e7eb;background:#fff;
+      cursor:pointer;font-size:22px;display:grid;place-items:center;
+      transition:transform .06s ease, border .2s ease, background .2s ease;
+      user-select:none;
+    }
+    .starBtn:active{transform:translateY(1px)}
+    .starBtn.is-on{border-color: var(--violeta-beethoven); background: rgba(104,13,191,.08)}
+    .rateBox label{display:block;font-weight:800;margin:10px 0 6px}
+    .rateBox textarea{
+      width:100%;min-height:96px;resize:vertical;
+      padding:12px;border:1px solid #e5e7eb;border-radius:14px;font-family:inherit;
+      outline:none;
+    }
+    .rateBox textarea:focus{
+      border-color: rgba(12,65,196,.35);
+      box-shadow: 0 0 0 4px rgba(12,65,196,.10);
+    }
+    .rowBtns{display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap}
+    .toastMini{margin-top:10px;font-weight:800}
+    .success{color:#0b7a3b}
+    .error{color:#b42318}
+  </style>
+</head>
+
+<body>
+  <a class="skiplink" href="#main">Saltar al contenido</a>
+
+  <noscript>
+    <div id="bootError">
+      <h2>⚠️ Falta activar JavaScript</h2>
+      <p>Esta página necesita JavaScript para enviar evaluaciones.</p>
+    </div>
+  </noscript>
+
+  <div id="bootError" hidden>
+    <h2>⚠️ No se pudo cargar la evaluación</h2>
+    <p>Revisa que existan <code>firebase.js</code> y <code>rate.js</code> en la raíz del proyecto.</p>
+  </div>
+
+  <header class="topbar">
+    <div class="wrap topbar__inner">
+      <div class="brand">
+        <!-- Cambiado a assets/ -->
+        <img src="./assets/logo.png" alt="Logo Musicala" class="brand__logo" />
+        <div class="brand__text">
+          <h1>Evaluación de experiencia</h1>
+          <p class="muted">
+            Tu opinión es anónima y nos ayuda a fortalecer la calidad humana y profesional de nuestro equipo.
+          </p>
+        </div>
+      </div>
+
+      <div class="searchbox">
+        <input
+          id="searchInput"
+          type="search"
+          placeholder="Buscar integrante…"
+          aria-label="Buscar integrante"
+          autocomplete="off"
+        />
+        <button id="clearSearch" class="btn btn--ghost" type="button">Limpiar</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" class="wrap">
+    <section id="cards" class="grid" aria-live="polite"></section>
+
+    <div id="emptyState" class="empty" hidden>
+      <p>No encontramos resultados con los filtros actuales.</p>
+      <button id="resetFilters" class="btn" type="button">Quitar filtros</button>
+    </div>
+  </main>
+
+  <!-- Modal de evaluación -->
+  <div
+    id="personModal"
+    class="modal"
+    aria-hidden="true"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="mName"
+  >
+    <div class="modal__backdrop" data-close></div>
+    <div class="modal__dialog" role="document">
+      <button class="modal__close" id="modalClose" aria-label="Cerrar" type="button">✕</button>
+
+      <div class="modal__header">
+        <img id="mPhoto" class="modal__avatar" alt="">
+        <div>
+          <h3 id="mName" class="modal__title"></h3>
+          <p id="mRole" class="modal__subtitle"></p>
+          <p class="hint">
+            La información enviada es confidencial y solo será revisada por la dirección administrativa.
+          </p>
+        </div>
+      </div>
+
+      <div class="rateBox">
+        <label>Calificación</label>
+        <div id="stars" class="stars" aria-label="Selecciona estrellas"></div>
+
+        <label for="comment">Observación (opcional)</label>
+        <textarea
+          id="comment"
+          maxlength="500"
+          placeholder="Si deseas, comparte un comentario breve que nos ayude a comprender mejor tu experiencia."
+        ></textarea>
+
+        <div class="rowBtns">
+          <button id="sendRating" class="btn" type="button">Enviar evaluación</button>
+          <button id="cancelRating" class="btn btn--ghost" type="button">Cancelar</button>
+          <span id="status" class="toastMini" role="status" aria-live="polite"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Carga del módulo principal (GitHub Pages friendly) -->
+  <script type="module">
+    const boot = document.getElementById("bootError");
+    try {
+      // rate.js debe importar db/auth desde ./firebase.js
+      await import("./rate.js");
+      boot.hidden = true;
+    } catch (err) {
+      console.error(err);
+      boot.hidden = false;
+    }
+  </script>
+</body>
+</html>
