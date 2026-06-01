@@ -29,6 +29,7 @@ const state = {
   currentPerson: null,
   selectedStars: 0,
   sending: false,
+  loadError: false,
 
   // para filtrar rápido sin recalcular strings todo el tiempo:
   searchIndex: new Map(), // key: personKey -> haystack string
@@ -60,10 +61,17 @@ init();
    Boot
 ========================= */
 async function init() {
+  showLoading();
   await loadData();
   buildSearchIndex();
   wireUI();
   renderCards();
+}
+
+function showLoading() {
+  if (els.grid) {
+    els.grid.innerHTML = `<p class="muted" style="padding:14px;font-weight:700;">Cargando el equipo…</p>`;
+  }
 }
 
 /* =========================
@@ -82,10 +90,12 @@ async function loadData() {
 
     // Fusión por personId (o id si no hay personId)
     state.people = mergePeople(normalized);
+    state.loadError = false;
   } catch (e) {
     console.error("No se pudo cargar data.json", e);
     state.raw = { people: [] };
     state.people = [];
+    state.loadError = true;
   }
 }
 
@@ -349,6 +359,13 @@ function wireUI() {
    Render cards
 ========================= */
 function renderCards(keepScroll = false) {
+  // Si falló la carga de datos, lo decimos claro (no es lo mismo que "sin resultados")
+  if (state.loadError) {
+    els.grid.innerHTML = `<p class="error" style="padding:14px;font-weight:700;">No se pudo cargar el equipo. Revisa que <code>data.json</code> exista y recarga la página.</p>`;
+    if (els.empty) els.empty.hidden = true;
+    return;
+  }
+
   const all = state.people || [];
   const q = state.query;
 

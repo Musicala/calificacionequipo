@@ -6,37 +6,105 @@
   <meta name="color-scheme" content="light" />
 
   <title>Admin · Calificaciones · Musicala</title>
-  <meta name="description" content="Panel interno para revisar calificaciones y comentarios del equipo de Musicala." />
+  <meta name="description" content="Panel interno para revisar calificaciones, comentarios y estadísticas del equipo de Musicala." />
   <meta name="theme-color" content="#0C41C4" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;600;700;900&display=swap" rel="stylesheet">
-
   <link rel="stylesheet" href="./styles.css" />
 
-  <!-- Admin-only styles (ideal: mover a styles.css) -->
   <style>
-    /* Layout */
-    .adminWrap{ padding-top:14px; padding-bottom:28px; }
-    .adminCard{ padding:16px; }
-    .adminTopRow{
-      display:flex;
-      gap:12px;
-      align-items:center;
-      flex-wrap:wrap;
-      justify-content:space-between;
-      margin-bottom:12px;
-    }
-    .adminControls{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      align-items:center;
+    :root{
+      --admin-ok:#0b7a3b;
+      --admin-warn:#a15c00;
+      --admin-bad:#b42318;
+      --admin-soft-blue:rgba(12,65,196,.07);
+      --admin-soft-purple:rgba(104,13,191,.07);
+      --admin-soft-pink:rgba(206,0,113,.07);
     }
 
-    /* Status pill */
+    body{ overflow-x:hidden; }
+    .adminWrap{ padding-top:18px; padding-bottom:38px; }
+    .adminHero{
+      display:grid;
+      grid-template-columns: 1fr auto;
+      align-items:start;
+      gap:14px;
+      margin-bottom:14px;
+    }
+    .adminHero__title{
+      border:1px solid rgba(12,10,30,.08);
+      border-radius:24px;
+      padding:18px;
+      background:
+        radial-gradient(700px 220px at 10% 0%, rgba(12,65,196,.10), transparent 55%),
+        radial-gradient(560px 220px at 95% 0%, rgba(206,0,113,.10), transparent 55%),
+        #fff;
+      box-shadow: var(--shadow);
+    }
+    .adminHero__title h2{ margin:0; font-size:clamp(20px,2.5vw,30px); line-height:1.05; }
+    .adminHero__title p{ margin:8px 0 0; color:rgba(0,0,0,.62); max-width:760px; }
+    .adminHero__actions{ display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+
+    .panel{
+      background:#fff;
+      border:1px solid rgba(12,10,30,.08);
+      border-radius:22px;
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .panel__inner{ padding:16px; }
+    .panel__head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:12px;
+    }
+    .panel__head h2,.panel__head h3{ margin:0; font-size:15px; font-weight:900; letter-spacing:.1px; }
+    .panel__hint{ color:rgba(0,0,0,.56); font-size:12px; font-weight:800; }
+
+    .adminTopRow{
+      display:grid;
+      grid-template-columns: 1fr auto;
+      gap:12px;
+      align-items:center;
+      margin-bottom:14px;
+    }
+    .adminControls{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .filtersPanel{ margin-bottom:14px; }
+    .filtersGrid{
+      display:grid;
+      grid-template-columns: minmax(240px, 1.3fr) repeat(5, minmax(130px, .7fr));
+      gap:10px;
+      align-items:end;
+    }
+    .filterField{ display:flex; flex-direction:column; gap:6px; min-width:0; }
+    .filterField label{ font-size:12px; font-weight:900; color:rgba(0,0,0,.56); }
+    .filterField .adminInput,.filterField .adminSelect{ width:100%; }
+    .rangePair{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+    .adminInput,.adminSelect{
+      height: var(--control-h);
+      padding: 0 12px;
+      border: 1px solid rgba(12,10,30,.10);
+      border-radius: var(--control-r);
+      background: rgba(255,255,255,.92);
+      box-shadow: 0 1px 0 rgba(12,10,30,.03);
+      outline: 0;
+      transition: border-color .2s var(--ease), box-shadow .2s var(--ease), background .2s var(--ease);
+    }
+    .adminInput::placeholder{ color: rgba(35,35,35,.45); }
+    .adminInput:focus,.adminSelect:focus{
+      border-color: rgba(12,65,196,.35);
+      box-shadow: 0 0 0 4px rgba(12,65,196,.10);
+      background:#fff;
+    }
+    .adminSelect{ font-weight:900; cursor:pointer; }
+    .miniBtn{ height:38px; border-radius:12px; padding:0 12px; font-size:13px; }
+
     .pill{
       display:inline-flex;
       align-items:center;
@@ -45,12 +113,15 @@
       border:1px solid rgba(12,10,30,.10);
       border-radius:999px;
       background: rgba(255,255,255,.92);
-      box-shadow: 0 1px 0 rgba(12,10,30,.03);
+      box-shadow: var(--shadow-soft);
+      min-width:0;
     }
-    .muted2{ color: rgba(0,0,0,.62); }
+    .pill span:last-child{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .badgeMini{
       display:inline-flex;
       align-items:center;
+      justify-content:center;
+      gap:6px;
       padding:4px 10px;
       border-radius:999px;
       border:1px solid rgba(12,10,30,.10);
@@ -58,158 +129,156 @@
       font-weight:900;
       font-size:12px;
       letter-spacing:.2px;
+      white-space:nowrap;
     }
+    .badgeMini.good{ color:var(--admin-ok); background:rgba(11,122,59,.07); border-color:rgba(11,122,59,.18); }
+    .badgeMini.warn{ color:var(--admin-warn); background:rgba(161,92,0,.08); border-color:rgba(161,92,0,.20); }
+    .badgeMini.bad{ color:var(--admin-bad); background:rgba(180,35,24,.08); border-color:rgba(180,35,24,.20); }
+    .muted2{ color:rgba(0,0,0,.62); }
 
-    /* Inputs (match style.css vibe) */
-    .adminInput{
-      height: var(--control-h);
-      padding: 0 12px;
-      border: 1px solid rgba(12,10,30,.10);
-      border-radius: var(--control-r);
-      background: rgba(255,255,255,.88);
-      box-shadow: 0 1px 0 rgba(12,10,30,.03);
-      outline: 0;
-      transition: border-color .2s var(--ease), box-shadow .2s var(--ease), background .2s var(--ease);
-      width: min(360px, 70vw);
-    }
-    .adminInput::placeholder{ color: rgba(35,35,35,.45); }
-    .adminInput:focus{
-      border-color: rgba(12,65,196,.35);
-      box-shadow: 0 0 0 4px rgba(12,65,196,.10);
-      background: #fff;
-    }
-
-    .adminSelect{
-      height: var(--control-h);
-      padding: 0 38px 0 12px;
-      border: 1px solid rgba(12,10,30,.10);
-      border-radius: var(--control-r);
-      background: rgba(255,255,255,.88);
-      box-shadow: 0 1px 0 rgba(12,10,30,.03);
-      font-weight:900;
-      cursor:pointer;
-      outline:0;
-      appearance:none;
-      -webkit-appearance:none;
-      transition: border-color .2s var(--ease), box-shadow .2s var(--ease), background .2s var(--ease);
-    }
-    .adminSelect:focus{
-      border-color: rgba(12,65,196,.35);
-      box-shadow: 0 0 0 4px rgba(12,65,196,.10);
-      background: #fff;
-    }
-    .selectWrap{
-      position:relative;
-      display:inline-flex;
-      align-items:center;
-    }
-    .selectWrap::after{
-      content:"▾";
-      position:absolute;
-      right:12px;
-      pointer-events:none;
-      font-weight:900;
-      color: rgba(0,0,0,.55);
-      transform: translateY(-1px);
-    }
-
-    /* Summary row */
-    .summaryRow{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      align-items:center;
-      margin-bottom: 10px;
-    }
-
-    /* KPIs */
     .kpis{
       display:grid;
       grid-template-columns:repeat(12,1fr);
       gap:12px;
-      margin-top:12px;
-      margin-bottom:12px;
+      margin-bottom:14px;
     }
     .kpi{
       grid-column:span 3;
       background:#fff;
       border:1px solid rgba(12,10,30,.08);
-      border-radius:16px;
-      padding:12px 14px;
-      box-shadow: 0 10px 24px rgba(12,10,30,.06);
+      border-radius:18px;
+      padding:13px 14px;
+      box-shadow:0 10px 24px rgba(12,10,30,.055);
+      min-height:92px;
+      position:relative;
+      overflow:hidden;
     }
-    .kpi h3{
-      margin:0;
-      font-size:12px;
-      color:rgba(0,0,0,.55);
-      font-weight:900;
-      letter-spacing:.2px;
+    .kpi::after{
+      content:"";
+      position:absolute;
+      right:-40px;
+      top:-40px;
+      width:110px;
+      height:110px;
+      border-radius:999px;
+      background:var(--admin-soft-blue);
     }
-    .kpi p{
-      margin:6px 0 0;
-      font-size:20px;
-      font-weight:900;
-      letter-spacing:.2px;
-    }
-    @media (max-width: 900px){ .kpi{grid-column:span 6;} }
-    @media (max-width: 520px){ .kpi{grid-column:span 12;} }
+    .kpi:nth-child(2n)::after{ background:var(--admin-soft-purple); }
+    .kpi:nth-child(3n)::after{ background:var(--admin-soft-pink); }
+    .kpi h3{ margin:0; font-size:12px; color:rgba(0,0,0,.55); font-weight:900; letter-spacing:.2px; }
+    .kpi p{ margin:7px 0 0; font-size:clamp(20px,2.4vw,26px); font-weight:900; letter-spacing:.2px; position:relative; z-index:1; }
+    .kpi small{ display:block; margin-top:4px; color:rgba(0,0,0,.50); font-weight:800; position:relative; z-index:1; }
+    .kpi.good p{ color:var(--admin-ok); }
+    .kpi.warn p{ color:var(--admin-warn); }
+    .kpi.bad p{ color:var(--admin-bad); }
 
-    /* Two panel layout */
-    .split{
+    .insightBox{
       display:grid;
-      grid-template-columns: 1.05fr .95fr;
-      gap: 14px;
-      margin-top: 12px;
+      grid-template-columns: 1.1fr .9fr;
+      gap:14px;
+      margin-bottom:14px;
     }
-    @media (max-width: 980px){ .split{grid-template-columns:1fr;} }
+    .autoSummary{
+      padding:16px;
+      border-radius:20px;
+      background:linear-gradient(135deg, rgba(12,65,196,.07), rgba(104,13,191,.06)), #fff;
+      border:1px solid rgba(12,10,30,.08);
+      box-shadow:var(--shadow-soft);
+    }
+    .autoSummary h3{ margin:0 0 8px; font-size:15px; }
+    .autoSummary ul{ margin:0; padding-left:18px; color:rgba(0,0,0,.72); line-height:1.45; }
+    .autoSummary li + li{ margin-top:5px; }
+    .integrityList{ display:flex; flex-direction:column; gap:8px; }
 
-    .sectionTitle{
-      display:flex;
-      align-items:baseline;
-      justify-content:space-between;
-      gap:10px;
-      margin: 6px 0 10px;
+    .chartsGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap:14px;
+      margin-bottom:14px;
     }
-    .sectionTitle h2{
-      margin:0;
-      font-size:14px;
-      font-weight:900;
-      letter-spacing:.2px;
-    }
-    .mini{ font-size:12px; color:rgba(0,0,0,.55); font-weight:800; }
+    .chartCard{ min-height:260px; }
+    .bars{ display:flex; flex-direction:column; gap:10px; }
+    .barRow{ display:grid; grid-template-columns:78px 1fr 52px; align-items:center; gap:10px; font-size:13px; font-weight:800; }
+    .barTrack{ height:12px; background:rgba(12,10,30,.06); border-radius:999px; overflow:hidden; }
+    .barFill{ height:100%; width:0%; background:linear-gradient(90deg, var(--azul-mozart), var(--violeta-beethoven)); border-radius:999px; }
+    .tinyTrend{ display:flex; align-items:end; gap:7px; min-height:170px; padding:10px 2px 2px; overflow-x:auto; }
+    .trendCol{ min-width:34px; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:6px; }
+    .trendBar{ width:100%; min-height:4px; border-radius:9px 9px 4px 4px; background:linear-gradient(180deg, var(--violeta-beethoven), var(--azul-mozart)); opacity:.88; }
+    .trendLabel{ font-size:10px; font-weight:900; color:rgba(0,0,0,.52); white-space:nowrap; transform:rotate(-30deg); transform-origin:center; margin-top:4px; }
+    .trendValue{ font-size:11px; font-weight:900; color:rgba(0,0,0,.66); }
 
-    /* Tables */
+    .adminGridMain{
+      display:grid;
+      grid-template-columns: minmax(0,1.35fr) minmax(340px,.65fr);
+      gap:14px;
+    }
     .tableWrap{
       overflow:auto;
       border:1px solid rgba(12,10,30,.08);
-      border-radius:14px;
+      border-radius:16px;
       background:#fff;
-      box-shadow: 0 1px 0 rgba(12,10,30,.02);
+      box-shadow:var(--shadow-soft);
     }
-    table{ width:100%; border-collapse:collapse; background:#fff; }
-    th,td{ padding:10px 12px; vertical-align:top; border-bottom:1px solid rgba(12,10,30,.06); }
+    table{ width:100%; border-collapse:separate; border-spacing:0; background:#fff; }
+    th,td{ padding:11px 12px; vertical-align:top; border-bottom:1px solid rgba(12,10,30,.06); }
     th{
       position:sticky;
       top:0;
       z-index:2;
-      background: linear-gradient(180deg, #fbfdff, #f7faff);
+      background:linear-gradient(180deg,#fbfdff,#f7faff);
       text-align:left;
       font-weight:900;
       border-bottom:1px solid rgba(12,10,30,.10);
+      font-size:13px;
+      white-space:nowrap;
     }
-    tbody tr:nth-child(even) td{ background: rgba(12,65,196,.02); }
-    tbody tr:hover td{ background: rgba(12,65,196,.05); }
-
+    tbody tr:nth-child(even) td{ background:rgba(12,65,196,.018); }
+    tbody tr:hover td{ background:rgba(12,65,196,.05); }
     code{ font-weight:900; }
-    .starsTxt{ font-weight:900; }
+    .personCell{ display:flex; gap:10px; align-items:center; min-width:260px; }
+    .personThumb{ width:42px; height:42px; border-radius:14px; object-fit:cover; border:1px solid rgba(12,10,30,.08); background:#f3f4f6; flex:0 0 auto; }
+    .personName{ font-weight:900; line-height:1.15; }
+    .personRole{ color:rgba(0,0,0,.56); font-size:12px; line-height:1.2; margin-top:3px; max-width:360px; }
+    .scoreBig{ font-weight:900; font-size:16px; }
+    .starsTxt{ font-weight:900; white-space:nowrap; }
+    .deltaUp{ color:var(--admin-ok); font-weight:900; }
+    .deltaDown{ color:var(--admin-bad); font-weight:900; }
+    .deltaFlat{ color:rgba(0,0,0,.55); font-weight:900; }
 
-    /* Footer message */
-    .adminMsg{
-      margin-top:10px;
-      font-weight:900;
+    .commentList{ display:flex; flex-direction:column; gap:10px; max-height:650px; overflow:auto; padding-right:3px; }
+    .commentCard{
+      border:1px solid rgba(12,10,30,.08);
+      border-radius:16px;
+      padding:12px;
+      background:#fff;
+      box-shadow:var(--shadow-soft);
     }
+    .commentTop{ display:flex; justify-content:space-between; gap:10px; align-items:flex-start; margin-bottom:7px; }
+    .commentName{ font-weight:900; }
+    .commentDate{ color:rgba(0,0,0,.52); font-size:12px; font-weight:800; }
+    .commentText{ margin:7px 0 0; color:rgba(0,0,0,.72); line-height:1.38; white-space:pre-wrap; overflow-wrap:anywhere; }
+    .commentEmpty{ padding:14px; color:rgba(0,0,0,.62); font-weight:800; }
 
-    /* Boot error */
+    details.panel{ margin-top:14px; }
+    details.panel summary{
+      cursor:pointer;
+      padding:16px;
+      font-weight:900;
+      list-style:none;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+    }
+    details.panel summary::-webkit-details-marker{ display:none; }
+    details.panel summary::after{ content:"▾"; font-weight:900; color:rgba(0,0,0,.55); }
+    details.panel[open] summary::after{ transform:rotate(180deg); }
+
+    .adminMsg{ margin-top:10px; font-weight:900; }
+    .ok,.success{ color:var(--admin-ok); }
+    .bad,.error{ color:var(--admin-bad); }
+    .warn{ color:var(--admin-warn); }
+
     #bootError[hidden]{ display:none!important; }
     #bootError{
       margin:14px auto 0;
@@ -221,6 +290,27 @@
     }
     #bootError h2{ margin:0 0 6px; font-size:15px; }
     #bootError p{ margin:0; color:rgba(0,0,0,.72); }
+
+    @media (max-width:1180px){
+      .filtersGrid{ grid-template-columns: repeat(3, minmax(0,1fr)); }
+      .chartsGrid{ grid-template-columns:1fr 1fr; }
+      .adminGridMain{ grid-template-columns:1fr; }
+    }
+    @media (max-width:900px){
+      .adminHero{ grid-template-columns:1fr; }
+      .adminHero__actions{ justify-content:flex-start; }
+      .adminTopRow{ grid-template-columns:1fr; }
+      .kpi{ grid-column:span 6; }
+      .insightBox{ grid-template-columns:1fr; }
+      .chartsGrid{ grid-template-columns:1fr; }
+    }
+    @media (max-width:640px){
+      .filtersGrid{ grid-template-columns:1fr; }
+      .rangePair{ grid-template-columns:1fr; }
+      .kpi{ grid-column:span 12; }
+      .panel__inner{ padding:12px; }
+      .pill{ width:100%; }
+    }
   </style>
 </head>
 
@@ -243,7 +333,7 @@
         <img src="./assets/logo.png" alt="Logo Musicala" class="brand__logo" />
         <div class="brand__text">
           <h1>Admin · Calificaciones</h1>
-          <p class="muted">Acceso restringido. Solo correos autorizados.</p>
+          <p class="muted">Panel interno de lectura, estadísticas y comentarios.</p>
         </div>
       </div>
 
@@ -255,117 +345,237 @@
   </header>
 
   <main class="wrap adminWrap">
-    <!-- Top row: estado + controles -->
+    <section class="adminHero">
+      <div class="adminHero__title">
+        <h2>Lectura clara del clima del equipo</h2>
+        <p>Promedios, alertas, comentarios, tendencias y datos crudos en un solo lugar. Porque aparentemente mirar una tabla infinita no era suficientemente castigo administrativo. 🫠</p>
+      </div>
+      <div class="adminHero__actions">
+        <button id="btnReload" class="btn btn--ghost" type="button">Recargar</button>
+        <button id="btnExport" class="btn btn--ghost" type="button">Exportar registros</button>
+        <button id="btnExportAgg" class="btn btn--ghost" type="button">Exportar ranking</button>
+      </div>
+    </section>
+
     <div class="adminTopRow">
       <div class="pill" aria-label="Estado de autenticación">
         <span class="badgeMini">Estado</span>
         <span id="authState" class="muted2">No has iniciado sesión.</span>
       </div>
-
-      <div class="adminControls">
-        <input
-          id="filterPerson"
-          class="adminInput"
-          type="search"
-          placeholder="Filtrar por personId o nombre…"
-          aria-label="Filtrar"
-          autocomplete="off"
-        />
-
-        <div class="selectWrap" aria-label="Rango de días">
-          <select id="rangeDays" class="adminSelect">
-            <option value="0">Todo</option>
-            <option value="7">Últimos 7 días</option>
-            <option value="30">Últimos 30 días</option>
-            <option value="90">Últimos 90 días</option>
-          </select>
-        </div>
-
-        <button id="btnExport" class="btn btn--ghost" type="button" title="Exportar CSV">Exportar CSV</button>
-        <button id="btnReload" class="btn btn--ghost" type="button">Recargar</button>
-      </div>
-    </div>
-
-    <section class="card adminCard">
-      <div class="summaryRow">
+      <div class="pill" aria-label="Resumen de vista">
         <span class="badgeMini">Vista</span>
         <span id="summary" class="muted2">Inicia sesión para ver datos.</span>
       </div>
+    </div>
 
-      <div class="kpis" id="kpis" aria-label="Indicadores" style="display:none;">
-        <div class="kpi"><h3>Total evaluaciones</h3><p id="kpiTotal">0</p></div>
-        <div class="kpi"><h3>Promedio general</h3><p id="kpiAvg">0.0</p></div>
-        <div class="kpi"><h3>% con comentario</h3><p id="kpiWithComment">0%</p></div>
-        <div class="kpi"><h3>Evaluaciones recientes</h3><p id="kpiRecent">0</p></div>
-      </div>
-
-      <div class="split">
-        <div>
-          <div class="sectionTitle">
-            <h2>Ranking por persona</h2>
-            <span class="mini">Promedio + cantidad + última fecha</span>
+    <section class="panel filtersPanel">
+      <div class="panel__inner">
+        <div class="panel__head">
+          <h2>Filtros</h2>
+          <span class="panel__hint">Todo se recalcula al instante con los datos cargados.</span>
+        </div>
+        <div class="filtersGrid">
+          <div class="filterField">
+            <label for="filterPerson">Persona, rol o personId</label>
+            <input id="filterPerson" class="adminInput" type="search" placeholder="Ej: Camila, danza, liceth-rincon…" autocomplete="off" />
           </div>
 
+          <div class="filterField">
+            <label for="rangeDays">Periodo rápido</label>
+            <select id="rangeDays" class="adminSelect">
+              <option value="0">Todo</option>
+              <option value="7">Últimos 7 días</option>
+              <option value="30">Últimos 30 días</option>
+              <option value="90">Últimos 90 días</option>
+              <option value="180">Últimos 180 días</option>
+              <option value="365">Último año</option>
+            </select>
+          </div>
+
+          <div class="filterField">
+            <label for="filterStars">Calificación</label>
+            <select id="filterStars" class="adminSelect">
+              <option value="all">Todas</option>
+              <option value="5">5 estrellas</option>
+              <option value="4">4 estrellas</option>
+              <option value="3">3 estrellas</option>
+              <option value="2">2 estrellas</option>
+              <option value="1">1 estrella</option>
+              <option value="low">3 o menos</option>
+              <option value="attention">Menos de 5</option>
+            </select>
+          </div>
+
+          <div class="filterField">
+            <label for="filterComments">Comentarios</label>
+            <select id="filterComments" class="adminSelect">
+              <option value="all">Todos</option>
+              <option value="with">Con comentario</option>
+              <option value="without">Sin comentario</option>
+            </select>
+          </div>
+
+          <div class="filterField">
+            <label for="loadLimit">Datos a cargar</label>
+            <select id="loadLimit" class="adminSelect">
+              <option value="500">Últimos 500</option>
+              <option value="1000">Últimos 1000</option>
+              <option value="2000">Últimos 2000</option>
+            </select>
+          </div>
+
+          <div class="filterField">
+            <label for="sortRanking">Orden ranking</label>
+            <select id="sortRanking" class="adminSelect">
+              <option value="avg-desc">Mejor promedio</option>
+              <option value="attention">Prioridad de atención</option>
+              <option value="count-desc">Más evaluaciones</option>
+              <option value="latest-desc">Más recientes</option>
+              <option value="avg-asc">Menor promedio</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="filtersGrid" style="margin-top:10px; grid-template-columns: minmax(240px,1fr) minmax(240px,1fr) minmax(160px,.5fr) auto;">
+          <div class="filterField">
+            <label>Rango exacto</label>
+            <div class="rangePair">
+              <input id="dateFrom" class="adminInput" type="date" aria-label="Desde" />
+              <input id="dateTo" class="adminInput" type="date" aria-label="Hasta" />
+            </div>
+          </div>
+          <div class="filterField">
+            <label for="commentSearch">Buscar dentro de comentarios</label>
+            <input id="commentSearch" class="adminInput" type="search" placeholder="Ej: amable, puntual, demora…" autocomplete="off" />
+          </div>
+          <div class="filterField">
+            <label for="minReviews">Mínimo de evaluaciones</label>
+            <input id="minReviews" class="adminInput" type="number" min="0" step="1" placeholder="0" />
+          </div>
+          <div class="filterField" style="justify-content:flex-end;">
+            <label aria-hidden="true">&nbsp;</label>
+            <button id="btnClearFilters" class="btn btn--ghost" type="button">Limpiar filtros</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="kpis" id="kpis" aria-label="Indicadores" style="display:none;">
+      <article class="kpi"><h3>Total evaluaciones</h3><p id="kpiTotal">0</p><small id="kpiTotalHelp">registros filtrados</small></article>
+      <article class="kpi"><h3>Promedio general</h3><p id="kpiAvg">0.00</p><small id="kpiAvgHelp">sobre 5 estrellas</small></article>
+      <article class="kpi"><h3>Personas evaluadas</h3><p id="kpiPeople">0</p><small id="kpiPeopleHelp">con al menos 1 registro</small></article>
+      <article class="kpi"><h3>% con comentario</h3><p id="kpiWithComment">0%</p><small id="kpiWithCommentHelp">calidad de retroalimentación</small></article>
+      <article class="kpi"><h3>Evaluaciones recientes</h3><p id="kpiRecent">0</p><small>últimos 7 días</small></article>
+      <article class="kpi"><h3>Menos de 5 estrellas</h3><p id="kpiNotPerfect">0</p><small>posibles señales a revisar</small></article>
+      <article class="kpi"><h3>Alertas críticas</h3><p id="kpiCritical">0</p><small>3 estrellas o menos</small></article>
+      <article class="kpi"><h3>Última evaluación</h3><p id="kpiLast">—</p><small>fecha más reciente</small></article>
+    </section>
+
+    <section class="insightBox" id="insightBox" hidden>
+      <div class="autoSummary">
+        <h3>Lectura rápida</h3>
+        <ul id="autoSummary"></ul>
+      </div>
+      <div class="autoSummary">
+        <h3>Control de datos</h3>
+        <div id="dataIntegrity" class="integrityList"></div>
+      </div>
+    </section>
+
+    <section class="chartsGrid" id="chartsGrid" hidden>
+      <article class="panel chartCard">
+        <div class="panel__inner">
+          <div class="panel__head">
+            <h3>Distribución de estrellas</h3>
+            <span class="panel__hint">Dónde se concentra la evaluación</span>
+          </div>
+          <div id="starsDistribution" class="bars"></div>
+        </div>
+      </article>
+
+      <article class="panel chartCard">
+        <div class="panel__inner">
+          <div class="panel__head">
+            <h3>Actividad por día</h3>
+            <span class="panel__hint">Últimos 14 días con datos</span>
+          </div>
+          <div id="dailyTrend" class="tinyTrend"></div>
+        </div>
+      </article>
+
+      <article class="panel chartCard">
+        <div class="panel__inner">
+          <div class="panel__head">
+            <h3>Participación por área</h3>
+            <span class="panel__hint">Según data.json</span>
+          </div>
+          <div id="sectionDistribution" class="bars"></div>
+        </div>
+      </article>
+    </section>
+
+    <section class="adminGridMain">
+      <article class="panel">
+        <div class="panel__inner">
+          <div class="panel__head">
+            <h2>Ranking por persona</h2>
+            <span class="panel__hint">Promedio, volumen, tendencia y estado</span>
+          </div>
           <div class="tableWrap">
             <table aria-label="Tabla de agregados por persona">
               <thead>
                 <tr>
-                  <th style="min-width:220px;">Persona</th>
-                  <th style="min-width:120px;">personId</th>
-                  <th style="min-width:110px;">Promedio</th>
-                  <th style="min-width:90px;">#</th>
-                  <th style="min-width:170px;">Última</th>
+                  <th style="min-width:280px;">Persona</th>
+                  <th>Promedio</th>
+                  <th>#</th>
+                  <th>Coment.</th>
+                  <th>&lt;5</th>
+                  <th>Última</th>
+                  <th>Tendencia</th>
+                  <th>Estado</th>
                 </tr>
               </thead>
               <tbody id="tbodyAgg"></tbody>
             </table>
           </div>
         </div>
+      </article>
 
-        <div>
-          <div class="sectionTitle">
+      <aside class="panel">
+        <div class="panel__inner">
+          <div class="panel__head">
             <h2>Últimos comentarios</h2>
-            <span class="mini">Solo los que traen texto</span>
+            <span class="panel__hint">Texto real, no numeritos tristes</span>
           </div>
+          <div id="commentsList" class="commentList"></div>
+        </div>
+      </aside>
+    </section>
 
-          <div class="tableWrap">
-            <table aria-label="Tabla de comentarios recientes">
-              <thead>
-                <tr>
-                  <th style="min-width:170px;">Fecha</th>
-                  <th style="min-width:220px;">Persona</th>
-                  <th style="min-width:90px;">⭐</th>
-                  <th style="min-width:380px;">Comentario</th>
-                </tr>
-              </thead>
-              <tbody id="tbodyComments"></tbody>
-            </table>
-          </div>
+    <details class="panel">
+      <summary>
+        <span>Registro crudo</span>
+        <span class="panel__hint">Para auditoría y revisión puntual</span>
+      </summary>
+      <div class="panel__inner" style="padding-top:0;">
+        <div class="tableWrap">
+          <table aria-label="Tabla de calificaciones">
+            <thead>
+              <tr>
+                <th style="min-width:150px;">Fecha</th>
+                <th style="min-width:220px;">Persona</th>
+                <th style="min-width:140px;">personId</th>
+                <th style="min-width:90px;">⭐</th>
+                <th style="min-width:420px;">Comentario</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
         </div>
       </div>
+    </details>
 
-      <div class="sectionTitle" style="margin-top:14px;">
-        <h2>Registro crudo</h2>
-        <span class="mini">Para auditoría. Aquí está todo.</span>
-      </div>
-
-      <div class="tableWrap" style="margin-top:10px;">
-        <table aria-label="Tabla de calificaciones">
-          <thead>
-            <tr>
-              <th style="min-width:150px;">Fecha</th>
-              <th style="min-width:220px;">Persona</th>
-              <th style="min-width:140px;">personId</th>
-              <th style="min-width:90px;">⭐</th>
-              <th style="min-width:420px;">Comentario</th>
-            </tr>
-          </thead>
-          <tbody id="tbody"></tbody>
-        </table>
-      </div>
-
-      <div id="msg" class="adminMsg"></div>
-    </section>
+    <div id="msg" class="adminMsg" role="status" aria-live="polite"></div>
   </main>
 
   <script type="module">
