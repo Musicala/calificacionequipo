@@ -8,7 +8,7 @@
  * - KPIs, distribución, tendencias, ranking, comentarios, control de datos y exportaciones
  */
 
-import { auth, provider, db } from "./firebase.js";
+import { auth, provider, db, storage } from "./firebase.js";
 import {
   signInWithPopup,
   signInWithRedirect,
@@ -26,6 +26,11 @@ import {
   setDoc,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import {
+  getDownloadURL,
+  ref,
+  uploadBytes
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-storage.js";
 
 const ADMIN_EMAILS = new Set([
   "alekcaballeromusic@gmail.com",
@@ -395,8 +400,11 @@ async function saveTeamMember(event) {
     const file = els.memberPhotoFile?.files?.[0] || null;
     const personId = state.editingPersonId || slug(name);
     const current = state.peopleById.get(personId);
-    const photoDataUrl = file ? await imageFileToDataUrl(file) : (current?.photoDataUrl || "");
-    const finalPhotoUrl = photoUrl || (file ? "" : (current?.photoUrl || ""));
+    let finalPhotoUrl = photoUrl || (current?.photoUrl || "");
+    if (file) {
+      setMemberStatus("Subiendo foto...", "");
+      finalPhotoUrl = await uploadTeamPhoto(file, personId);
+    }
 
     await setDoc(doc(db, "teamMembers", personId), {
       personId,
@@ -407,7 +415,7 @@ async function saveTeamMember(event) {
       subarea,
       tags,
       photoUrl: finalPhotoUrl,
-      photoDataUrl,
+      photoDataUrl: "",
       active: true,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -469,6 +477,55 @@ function imageFileToDataUrl(file) {
         const ctx = canvas.getContext("2d");
         ctx.drawImage(img, 0, 0, width, height);
         resolve(canvas.toDataURL("image/jpeg", 0.82));
+      };
+      img.src = String(reader.result || "");
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadTeamPhoto(file, personId) {
+  const blob = await imageFileToJpegBlob(file);
+  const stamp = Date.now();
+  const cleanPersonId = slug(personId) || "persona";
+  const photoRef = ref(storage, `teamMembers/${cleanPersonId}/foto-${stamp}.jpg`);
+  await uploadBytes(photoRef, blob, {
+    contentType: "image/jpeg",
+    customMetadata: {
+      uploadedBy: state.user?.email || "",
+    },
+  });
+  return getDownloadURL(photoRef);
+}
+
+function imageFileToJpegBlob(file) {
+  return new Promise((resolve, reject) => {
+    if (!/^image\/(jpeg|png|webp)$/i.test(file.type)) {
+      reject(new Error("Formato no soportado"));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error || new Error("No se pudo leer la imagen"));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("No se pudo procesar la imagen"));
+      img.onload = () => {
+        const max = 900;
+        const scale = Math.min(1, max / Math.max(img.width, img.height));
+        const width = Math.max(1, Math.round(img.width * scale));
+        const height = Math.max(1, Math.round(img.height * scale));
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            reject(new Error("No se pudo comprimir la imagen"));
+            return;
+          }
+          resolve(blob);
+        }, "image/jpeg", 0.84);
       };
       img.src = String(reader.result || "");
     };

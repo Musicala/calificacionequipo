@@ -8,6 +8,7 @@
 
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import { getStorage } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-storage.js";
 import { getAuth, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
 const firebaseConfig = {
@@ -25,6 +26,9 @@ export const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfi
 // Firestore
 export const db = getFirestore(app);
 
+// Storage
+export const storage = getStorage(app);
+
 // Auth (solo lo usa admin.html, pero no estorba exportarlo siempre)
 export const auth = getAuth(app);
 auth.useDeviceLanguage(); // ayuda a que el popup salga en el idioma del dispositivo
@@ -36,4 +40,4 @@ export const provider = new GoogleAuthProvider();
 
 // Utilidad mínima para debugging
 export const projectId = firebaseConfig.projectId;
-export const isFirebaseReady = () => !!app && !!db && !!auth;
+export const isFirebaseReady = () => !!app && !!db && !!auth && !!storage;
