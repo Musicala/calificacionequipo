@@ -286,6 +286,11 @@ async function loadPeopleIndex() {
       };
 
       const name = String(p.name || "").trim();
+      if (p._deleted) {
+        merged.delete(pid);
+        continue;
+      }
+
       if (p._dynamic) {
         cur.name = name || cur.name;
         cur.roles = [];
@@ -338,7 +343,6 @@ async function loadDynamicTeamMembers() {
     const people = [];
     snap.forEach((doc) => {
       const d = doc.data() || {};
-      if (d.active === false) return;
       people.push({
         id: doc.id,
         personId: d.personId || doc.id,
@@ -352,6 +356,7 @@ async function loadDynamicTeamMembers() {
         photoUrl: d.photoUrl || "",
         photoDataUrl: d.photoDataUrl || "",
         _dynamic: true,
+        _deleted: d.active === false,
       });
     });
     return people;
@@ -534,6 +539,12 @@ function imageFileToJpegBlob(file) {
 }
 
 function handleMemberDirectoryClick(event) {
+  const deleteBtn = event.target.closest?.("[data-delete-person]");
+  if (deleteBtn) {
+    deleteTeamMember(deleteBtn.getAttribute("data-delete-person") || "");
+    return;
+  }
+
   const btn = event.target.closest?.("[data-edit-person]");
   if (!btn) return;
   const personId = btn.getAttribute("data-edit-person") || "";
@@ -553,6 +564,46 @@ function handleMemberDirectoryClick(event) {
   if (els.memberCancelEdit) els.memberCancelEdit.hidden = false;
   setMemberStatus(`Editando ${person.name}.`, "");
   els.memberName?.focus?.();
+}
+
+async function deleteTeamMember(personId) {
+  const person = state.peopleById.get(personId);
+  if (!person) return;
+
+  const ok = window.confirm(`¿Eliminar a ${person.name} del directorio de calificaciones?`);
+  if (!ok) return;
+
+  setMemberStatus(`Eliminando ${person.name}...`, "");
+
+  try {
+    await setDoc(doc(db, "teamMembers", personId), {
+      personId,
+      name: person.name || personId,
+      role: person.role || "Equipo",
+      section: slug(person.sectionLabel || "equipo") || "equipo",
+      sectionLabel: person.sectionLabel || "Equipo",
+      subarea: person.subarea || "",
+      tags: Array.isArray(person.tags) ? person.tags : [],
+      photoUrl: person.photoUrl || "",
+      photoDataUrl: "",
+      active: false,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      createdBy: state.user?.email || "",
+      updatedBy: state.user?.email || "",
+    });
+
+    if (state.editingPersonId === personId) clearMemberForm();
+    setMemberStatus(`${person.name} fue eliminado del directorio.`, "success");
+    await loadPeopleIndex();
+    renderAllFromCache();
+  } catch (e) {
+    console.error(e);
+    const msg = isPermissionError(e)
+      ? "No se pudo eliminar por permisos. Revisa Firestore Rules."
+      : "No se pudo eliminar. Revisa la consola.";
+    setMemberStatus(msg, "error");
+  }
 }
 
 function clearMemberForm() {
@@ -576,6 +627,7 @@ function renderMemberDirectory() {
         <span>${escapeHtml(p.role || p.sectionLabel || p.personId)}</span>
       </div>
       <button class="miniBtn" type="button" data-edit-person="${escapeAttr(p.personId)}">Editar</button>
+      <button class="miniBtn" type="button" data-delete-person="${escapeAttr(p.personId)}">Eliminar</button>
     </div>
   `).join("");
 }

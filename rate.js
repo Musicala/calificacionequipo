@@ -132,7 +132,6 @@ async function loadDynamicTeamMembers() {
     const people = [];
     snap.forEach((doc) => {
       const d = doc.data() || {};
-      if (d.active === false) return;
       people.push({
         id: doc.id,
         personId: d.personId || doc.id,
@@ -144,6 +143,7 @@ async function loadDynamicTeamMembers() {
         tags: Array.isArray(d.tags) ? d.tags : [],
         photo: d.photoDataUrl || d.photoUrl || "",
         _dynamic: true,
+        _deleted: d.active === false,
       });
     });
     return people;
@@ -179,6 +179,11 @@ function mergePeople(list) {
     if (!key) continue;
 
     const cur = byKey.get(key);
+    if (p._deleted) {
+      byKey.delete(key);
+      continue;
+    }
+
     if (!cur) {
       byKey.set(key, {
         // Identidad
