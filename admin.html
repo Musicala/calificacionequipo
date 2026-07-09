@@ -258,6 +258,52 @@
     .commentDate{ color:rgba(0,0,0,.52); font-size:12px; font-weight:800; }
     .commentText{ margin:7px 0 0; color:rgba(0,0,0,.72); line-height:1.38; white-space:pre-wrap; overflow-wrap:anywhere; }
     .commentEmpty{ padding:14px; color:rgba(0,0,0,.62); font-weight:800; }
+    .memberManager{ margin-bottom:14px; }
+    .memberManagerGrid{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) minmax(280px,.55fr);
+      gap:14px;
+      align-items:start;
+    }
+    .memberFormGrid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:10px;
+      align-items:end;
+    }
+    .memberFormGrid .wide{ grid-column:1 / -1; }
+    .memberPhotoRow{ display:flex; gap:12px; align-items:center; }
+    .memberPreview{
+      width:72px;
+      height:72px;
+      border-radius:16px;
+      object-fit:cover;
+      border:1px solid rgba(12,10,30,.10);
+      background:#f3f4f6;
+      flex:0 0 auto;
+    }
+    .memberDirectory{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:8px;
+      max-height:330px;
+      overflow:auto;
+      padding-right:2px;
+    }
+    .memberMini{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      border:1px solid rgba(12,10,30,.07);
+      border-radius:14px;
+      padding:9px;
+      background:#fff;
+    }
+    .memberMini img{ width:40px; height:40px; border-radius:12px; object-fit:cover; background:#f3f4f6; }
+    .memberMini strong{ display:block; font-size:13px; line-height:1.15; }
+    .memberMini span{ display:block; color:rgba(0,0,0,.56); font-size:12px; font-weight:800; margin-top:2px; }
+    .panel__hint.success{ color:var(--admin-ok); }
+    .panel__hint.error{ color:var(--admin-bad); }
 
     details.panel{ margin-top:14px; }
     details.panel summary{
@@ -367,6 +413,67 @@
         <span id="summary" class="muted2">Inicia sesión para ver datos.</span>
       </div>
     </div>
+
+    <section class="panel memberManager">
+      <div class="panel__inner">
+        <div class="panel__head">
+          <h2>Equipo</h2>
+          <span id="memberStatus" class="panel__hint">Agrega nuevos miembros sin editar data.json.</span>
+        </div>
+
+        <div class="memberManagerGrid">
+          <form id="memberForm" class="memberFormGrid">
+            <div class="filterField">
+              <label for="memberName">Nombre</label>
+              <input id="memberName" class="adminInput" type="text" placeholder="Ej: Mariana Pérez" autocomplete="off" required />
+            </div>
+
+            <div class="filterField">
+              <label for="memberRole">Rol o cargo</label>
+              <input id="memberRole" class="adminInput" type="text" placeholder="Ej: Docente de música" autocomplete="off" required />
+            </div>
+
+            <div class="filterField">
+              <label for="memberSection">Área</label>
+              <input id="memberSection" class="adminInput" type="text" placeholder="Ej: Música, Administrativo, Danzas" autocomplete="off" required />
+            </div>
+
+            <div class="filterField">
+              <label for="memberSubarea">Subárea</label>
+              <input id="memberSubarea" class="adminInput" type="text" placeholder="Ej: Piano, Comercial, Producción" autocomplete="off" />
+            </div>
+
+            <div class="filterField wide">
+              <label for="memberTags">Etiquetas</label>
+              <input id="memberTags" class="adminInput" type="text" placeholder="Separadas por coma: puntualidad, atención a familias, clases grupales" autocomplete="off" />
+            </div>
+
+            <div class="filterField wide">
+              <label>Foto</label>
+              <div class="memberPhotoRow">
+                <img id="memberPreview" class="memberPreview" src="./assets/avatar.png" alt="" />
+                <div class="filterField" style="flex:1;">
+                  <input id="memberPhotoFile" class="adminInput" type="file" accept="image/png,image/jpeg,image/webp" />
+                  <input id="memberPhotoUrl" class="adminInput" type="url" placeholder="O pega una URL de imagen" autocomplete="off" style="margin-top:8px;" />
+                </div>
+              </div>
+            </div>
+
+            <div class="filterField wide" style="align-items:flex-start;">
+              <button class="btn" type="submit">Agregar miembro</button>
+            </div>
+          </form>
+
+          <aside>
+            <div class="panel__head">
+              <h3>Directorio actual</h3>
+              <span class="panel__hint">data.json + Firestore</span>
+            </div>
+            <div id="memberDirectory" class="memberDirectory"></div>
+          </aside>
+        </div>
+      </div>
+    </section>
 
     <section class="panel filtersPanel">
       <div class="panel__inner">

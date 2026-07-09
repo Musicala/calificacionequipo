@@ -21,7 +21,9 @@ import {
   query,
   orderBy,
   limit,
-  getDocs
+  getDocs,
+  addDoc,
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 const ADMIN_EMAILS = new Set([
@@ -61,6 +63,17 @@ const els = {
   btnReload: document.getElementById("btnReload"),
   btnExport: document.getElementById("btnExport"),
   btnExportAgg: document.getElementById("btnExportAgg"),
+  memberForm: document.getElementById("memberForm"),
+  memberName: document.getElementById("memberName"),
+  memberRole: document.getElementById("memberRole"),
+  memberSection: document.getElementById("memberSection"),
+  memberSubarea: document.getElementById("memberSubarea"),
+  memberTags: document.getElementById("memberTags"),
+  memberPhotoUrl: document.getElementById("memberPhotoUrl"),
+  memberPhotoFile: document.getElementById("memberPhotoFile"),
+  memberPreview: document.getElementById("memberPreview"),
+  memberStatus: document.getElementById("memberStatus"),
+  memberDirectory: document.getElementById("memberDirectory"),
 
   kpisWrap: document.getElementById("kpis"),
   kpiTotal: document.getElementById("kpiTotal"),
@@ -98,6 +111,9 @@ function wireUI() {
   els.btnExport?.addEventListener("click", exportRecordsCSV);
   els.btnExportAgg?.addEventListener("click", exportRankingCSV);
   els.btnClearFilters?.addEventListener("click", clearFilters);
+  els.memberForm?.addEventListener("submit", saveTeamMember);
+  els.memberPhotoFile?.addEventListener("change", previewMemberPhoto);
+  els.memberPhotoUrl?.addEventListener("input", previewMemberPhotoUrl);
 
   const rerender = debounce(() => renderAllFromCache(), 80);
   [
@@ -236,7 +252,9 @@ async function loadPeopleIndex() {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
     const data = await res.json();
-    const people = Array.isArray(data?.people) ? data.people : [];
+    const staticPeople = Array.isArray(data?.people) ? data.people : [];
+    const dynamicPeople = await loadDynamicTeamMembers();
+    const people = [...staticPeople, ...dynamicPeople];
     const merged = new Map();
 
     for (const p of people) {
@@ -277,19 +295,176 @@ async function loadPeopleIndex() {
         photo: p.photo || "./assets/avatar.png",
       });
     }
+    renderMemberDirectory();
   } catch (e) {
     console.warn("No se pudo cargar data.json para index", e);
     state.peopleById.clear();
+    renderMemberDirectory();
+  }
+}
+
+async function loadDynamicTeamMembers() {
+  try {
+    const snap = await getDocs(collection(db, "teamMembers"));
+    const people = [];
+    snap.forEach((doc) => {
+      const d = doc.data() || {};
+      if (d.active === false) return;
+      people.push({
+        id: doc.id,
+        personId: d.personId || doc.id,
+        name: d.name || "",
+        role: d.role || "",
+        section: d.section || "",
+        sectionLabel: d.sectionLabel || d.section || "",
+        subarea: d.subarea || "",
+        tags: Array.isArray(d.tags) ? d.tags : [],
+        photo: d.photoDataUrl || d.photoUrl || "",
+      });
+    });
+    return people;
+  } catch (e) {
+    console.warn("No se pudieron cargar miembros dinámicos.", e);
+    return [];
   }
 }
 
 function resolveAssetPath(path) {
   const val = String(path || "").trim();
   if (!val) return "./assets/avatar.png";
+  if (/^data:image\//i.test(val)) return val;
   if (/^https?:\/\//i.test(val)) return val;
   if (val.startsWith("./") || val.startsWith("../")) return val;
   if (val.includes("/")) return `./${val.replace(/^\//, "")}`;
   return `./assets/${val}`;
+}
+
+async function saveTeamMember(event) {
+  event.preventDefault();
+  if (!state.isAdmin) {
+    setMemberStatus("Inicia sesión con un correo autorizado.", "error");
+    return;
+  }
+
+  const name = String(els.memberName?.value || "").trim();
+  const role = String(els.memberRole?.value || "").trim();
+  const sectionLabel = String(els.memberSection?.value || "").trim();
+  const subarea = String(els.memberSubarea?.value || "").trim();
+  const photoUrl = String(els.memberPhotoUrl?.value || "").trim();
+  const tags = String(els.memberTags?.value || "")
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+    .slice(0, 12);
+
+  if (!name || !role || !sectionLabel) {
+    setMemberStatus("Completa nombre, rol y área.", "error");
+    return;
+  }
+
+  setMemberStatus("Guardando miembro...", "");
+
+  try {
+    const file = els.memberPhotoFile?.files?.[0] || null;
+    const photoDataUrl = file ? await imageFileToDataUrl(file) : "";
+    const personId = slug(name);
+
+    await addDoc(collection(db, "teamMembers"), {
+      personId,
+      name,
+      role,
+      section: slug(sectionLabel) || "equipo",
+      sectionLabel,
+      subarea,
+      tags,
+      photoUrl,
+      photoDataUrl,
+      active: true,
+      createdAt: serverTimestamp(),
+      createdBy: state.user?.email || "",
+    });
+
+    els.memberForm?.reset();
+    if (els.memberPreview) els.memberPreview.src = "./assets/avatar.png";
+    setMemberStatus("Miembro agregado. Ya aparecerá en la pantalla pública.", "success");
+    await loadPeopleIndex();
+    renderAllFromCache();
+  } catch (e) {
+    console.error(e);
+    const msg = isPermissionError(e)
+      ? "No se pudo guardar por permisos. Publica las reglas nuevas de Firestore."
+      : "No se pudo guardar. Revisa la consola.";
+    setMemberStatus(msg, "error");
+  }
+}
+
+async function previewMemberPhoto() {
+  const file = els.memberPhotoFile?.files?.[0] || null;
+  if (!file || !els.memberPreview) return;
+  try {
+    els.memberPreview.src = await imageFileToDataUrl(file);
+  } catch (e) {
+    console.warn(e);
+    setMemberStatus("La foto no se pudo leer. Usa JPG, PNG o WEBP.", "error");
+  }
+}
+
+function previewMemberPhotoUrl() {
+  const url = String(els.memberPhotoUrl?.value || "").trim();
+  if (url && els.memberPreview && !els.memberPhotoFile?.files?.length) {
+    els.memberPreview.src = url;
+  }
+}
+
+function imageFileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    if (!/^image\/(jpeg|png|webp)$/i.test(file.type)) {
+      reject(new Error("Formato no soportado"));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error || new Error("No se pudo leer la imagen"));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("No se pudo procesar la imagen"));
+      img.onload = () => {
+        const max = 720;
+        const scale = Math.min(1, max / Math.max(img.width, img.height));
+        const width = Math.max(1, Math.round(img.width * scale));
+        const height = Math.max(1, Math.round(img.height * scale));
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", 0.82));
+      };
+      img.src = String(reader.result || "");
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderMemberDirectory() {
+  if (!els.memberDirectory) return;
+  const people = Array.from(state.peopleById.values()).sort((a, b) =>
+    String(a.name || "").localeCompare(String(b.name || ""), "es")
+  );
+  els.memberDirectory.innerHTML = people.slice(0, 80).map((p) => `
+    <div class="memberMini">
+      <img src="${escapeAttr(p.photo || "./assets/avatar.png")}" alt="" loading="lazy" onerror="this.src='./assets/avatar.png'" />
+      <div>
+        <strong>${escapeHtml(p.name)}</strong>
+        <span>${escapeHtml(p.role || p.sectionLabel || p.personId)}</span>
+      </div>
+    </div>
+  `).join("");
+}
+
+function setMemberStatus(text, kind) {
+  if (!els.memberStatus) return;
+  els.memberStatus.textContent = text;
+  els.memberStatus.className = "panel__hint " + (kind || "");
 }
 
 /* =========================
@@ -1009,6 +1184,16 @@ function normalizeText(s) {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .trim();
+}
+
+function slug(s) {
+  return String(s || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "")
+    .slice(0, 80);
 }
 
 function isPermissionError(err) {

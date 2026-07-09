@@ -18,6 +18,7 @@ import { db } from "./firebase.js";
 import {
   collection,
   addDoc,
+  getDocs,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
@@ -83,7 +84,9 @@ async function loadData() {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
     const data = await res.json();
-    state.raw = (data && Array.isArray(data.people)) ? data : { people: [] };
+    const staticPeople = (data && Array.isArray(data.people)) ? data.people : [];
+    const dynamicPeople = await loadDynamicTeamMembers();
+    state.raw = { people: [...staticPeople, ...dynamicPeople] };
 
     // Normaliza rutas (assets/)
     const normalized = (state.raw.people || []).map(normalizePerson);
@@ -123,11 +126,38 @@ function normalizePerson(p) {
   return out;
 }
 
+async function loadDynamicTeamMembers() {
+  try {
+    const snap = await getDocs(collection(db, "teamMembers"));
+    const people = [];
+    snap.forEach((doc) => {
+      const d = doc.data() || {};
+      if (d.active === false) return;
+      people.push({
+        id: doc.id,
+        personId: d.personId || doc.id,
+        name: d.name || "",
+        role: d.role || "",
+        section: d.section || "",
+        sectionLabel: d.sectionLabel || d.section || "",
+        subarea: d.subarea || "",
+        tags: Array.isArray(d.tags) ? d.tags : [],
+        photo: d.photoDataUrl || d.photoUrl || "",
+      });
+    });
+    return people;
+  } catch (e) {
+    console.warn("No se pudieron cargar miembros adicionales.", e);
+    return [];
+  }
+}
+
 function resolveAssetPath(path, fallback) {
   const val = (path || "").trim();
   if (!val) return `./assets/${fallback}`;
 
   // Si ya es URL o ya trae carpeta, respétalo
+  if (/^data:image\//i.test(val)) return val;
   if (/^https?:\/\//i.test(val)) return val;
   if (val.startsWith("./") || val.startsWith("../")) return val;
   if (val.includes("/")) return `./${val.replace(/^\//, "")}`;
