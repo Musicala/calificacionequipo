@@ -1,0 +1,34 @@
+rules_version = '2';
+
+// Reglas de Storage para Musicala - Calificacion de equipo
+// Ruta esperada para fotos editables: /teamMembers/{personId}/{fileName}
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email in [
+          'alekcaballeromusic@gmail.com',
+          'catalina.medina.leal@gmail.com'
+        ];
+    }
+
+    function isValidTeamPhoto() {
+      return request.resource != null
+        && request.resource.size <= 3 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|png|webp)');
+    }
+
+    match /teamMembers/{personId}/{fileName} {
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidTeamPhoto();
+      allow delete: if isAdmin();
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
