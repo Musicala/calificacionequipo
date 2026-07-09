@@ -1,0 +1,45 @@
+rules_version = '2';
+
+// Reglas de seguridad para Musicala · Calificación de equipo
+// Pegar en: Firebase Console -> Firestore Database -> Rules -> Publicar
+//
+// Modelo:
+//  - El público (sin login) SOLO puede crear evaluaciones en /reviews.
+//  - NADIE puede leer/editar/borrar evaluaciones, salvo los correos admin.
+//  - Validamos el contenido del documento al crearlo para evitar basura.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Lista blanca de administradores (debe coincidir con ADMIN_EMAILS en admin.js)
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email in [
+          'alekcaballeromusic@gmail.com',
+          'catalina.medina.leal@gmail.com'
+        ];
+    }
+
+    // Valida la forma de una evaluación nueva
+    function reviewValido() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['personId', 'stars', 'comment', 'createdAt'])
+        && d.personId is string && d.personId.size() > 0 && d.personId.size() <= 120
+        && d.stars is int && d.stars >= 1 && d.stars <= 5
+        && d.comment is string && d.comment.size() <= 500
+        && d.createdAt == request.time; // obliga a usar serverTimestamp()
+    }
+
+    match /reviews/{reviewId} {
+      allow create: if reviewValido();        // público puede crear (validado)
+      allow read:   if isAdmin();              // solo admins leen
+      allow update, delete: if false;          // nadie edita ni borra desde el cliente
+    }
+
+    // Todo lo demás, cerrado por defecto
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
