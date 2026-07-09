@@ -300,8 +300,10 @@
       background:#fff;
     }
     .memberMini img{ width:40px; height:40px; border-radius:12px; object-fit:cover; background:#f3f4f6; }
+    .memberMini div{ min-width:0; }
     .memberMini strong{ display:block; font-size:13px; line-height:1.15; }
     .memberMini span{ display:block; color:rgba(0,0,0,.56); font-size:12px; font-weight:800; margin-top:2px; }
+    .memberMini .miniBtn{ margin-left:auto; flex:0 0 auto; }
     .panel__hint.success{ color:var(--admin-ok); }
     .panel__hint.error{ color:var(--admin-bad); }
 
@@ -460,7 +462,10 @@
             </div>
 
             <div class="filterField wide" style="align-items:flex-start;">
-              <button class="btn" type="submit">Agregar miembro</button>
+              <div class="adminControls">
+                <button id="memberSubmit" class="btn" type="submit">Agregar miembro</button>
+                <button id="memberCancelEdit" class="btn btn--ghost" type="button" hidden>Cancelar edición</button>
+              </div>
             </div>
           </form>
 

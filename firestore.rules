@@ -34,7 +34,8 @@ service cloud.firestore {
       let d = request.resource.data;
       return d.keys().hasOnly([
           'personId', 'name', 'role', 'section', 'sectionLabel', 'subarea',
-          'tags', 'photoUrl', 'photoDataUrl', 'active', 'createdAt', 'createdBy'
+          'tags', 'photoUrl', 'photoDataUrl', 'active', 'createdAt', 'createdBy',
+          'updatedAt', 'updatedBy'
         ])
         && d.personId is string && d.personId.size() > 0 && d.personId.size() <= 120
         && d.name is string && d.name.size() > 0 && d.name.size() <= 120
@@ -47,13 +48,16 @@ service cloud.firestore {
         && d.photoDataUrl is string && d.photoDataUrl.size() <= 900000
         && d.active is bool
         && d.createdAt == request.time
-        && d.createdBy is string && d.createdBy.size() <= 180;
+        && d.createdBy is string && d.createdBy.size() <= 180
+        && d.updatedAt == request.time
+        && d.updatedBy is string && d.updatedBy.size() <= 180;
     }
 
     match /teamMembers/{memberId} {
       allow read: if true;
       allow create: if isAdmin() && teamMemberValido();
-      allow update, delete: if false;
+      allow update: if isAdmin() && teamMemberValido();
+      allow delete: if false;
     }
 
     match /{document=**} {

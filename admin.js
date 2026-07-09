@@ -18,11 +18,12 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import {
   collection,
+  doc,
   query,
   orderBy,
   limit,
   getDocs,
-  addDoc,
+  setDoc,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
@@ -39,6 +40,7 @@ const state = {
   loading: false,
   rowsCache: [],
   peopleById: new Map(),
+  editingPersonId: "",
   loadedLimit: 500,
 };
 
@@ -74,6 +76,8 @@ const els = {
   memberPreview: document.getElementById("memberPreview"),
   memberStatus: document.getElementById("memberStatus"),
   memberDirectory: document.getElementById("memberDirectory"),
+  memberSubmit: document.getElementById("memberSubmit"),
+  memberCancelEdit: document.getElementById("memberCancelEdit"),
 
   kpisWrap: document.getElementById("kpis"),
   kpiTotal: document.getElementById("kpiTotal"),
@@ -114,6 +118,8 @@ function wireUI() {
   els.memberForm?.addEventListener("submit", saveTeamMember);
   els.memberPhotoFile?.addEventListener("change", previewMemberPhoto);
   els.memberPhotoUrl?.addEventListener("input", previewMemberPhotoUrl);
+  els.memberCancelEdit?.addEventListener("click", clearMemberForm);
+  els.memberDirectory?.addEventListener("click", handleMemberDirectoryClick);
 
   const rerender = debounce(() => renderAllFromCache(), 80);
   [
@@ -269,10 +275,25 @@ async function loadPeopleIndex() {
         subareas: [],
         tags: [],
         photo: "",
+        photoUrl: "",
+        photoDataUrl: "",
+        dynamic: false,
       };
 
       const name = String(p.name || "").trim();
-      if (name && name.length > String(cur.name || "").length) cur.name = name;
+      if (p._dynamic) {
+        cur.name = name || cur.name;
+        cur.roles = [];
+        cur.sections = [];
+        cur.subareas = [];
+        cur.tags = [];
+        cur.photo = "";
+        cur.photoUrl = p.photoUrl || "";
+        cur.photoDataUrl = p.photoDataUrl || "";
+        cur.dynamic = true;
+      } else if (name && name.length > String(cur.name || "").length) {
+        cur.name = name;
+      }
 
       pushUnique(cur.roles, p.role);
       pushUnique(cur.sections, p.sectionLabel || p.section);
@@ -293,6 +314,9 @@ async function loadPeopleIndex() {
         sectionLabel: p.sections[0] || "Sin área",
         subarea: p.subareas.join(" · "),
         photo: p.photo || "./assets/avatar.png",
+        photoUrl: p.photoUrl || "",
+        photoDataUrl: p.photoDataUrl || "",
+        dynamic: !!p.dynamic,
       });
     }
     renderMemberDirectory();
@@ -320,6 +344,9 @@ async function loadDynamicTeamMembers() {
         subarea: d.subarea || "",
         tags: Array.isArray(d.tags) ? d.tags : [],
         photo: d.photoDataUrl || d.photoUrl || "",
+        photoUrl: d.photoUrl || "",
+        photoDataUrl: d.photoDataUrl || "",
+        _dynamic: true,
       });
     });
     return people;
@@ -366,10 +393,12 @@ async function saveTeamMember(event) {
 
   try {
     const file = els.memberPhotoFile?.files?.[0] || null;
-    const photoDataUrl = file ? await imageFileToDataUrl(file) : "";
-    const personId = slug(name);
+    const personId = state.editingPersonId || slug(name);
+    const current = state.peopleById.get(personId);
+    const photoDataUrl = file ? await imageFileToDataUrl(file) : (current?.photoDataUrl || "");
+    const finalPhotoUrl = photoUrl || (file ? "" : (current?.photoUrl || ""));
 
-    await addDoc(collection(db, "teamMembers"), {
+    await setDoc(doc(db, "teamMembers", personId), {
       personId,
       name,
       role,
@@ -377,16 +406,18 @@ async function saveTeamMember(event) {
       sectionLabel,
       subarea,
       tags,
-      photoUrl,
+      photoUrl: finalPhotoUrl,
       photoDataUrl,
       active: true,
       createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
       createdBy: state.user?.email || "",
+      updatedBy: state.user?.email || "",
     });
 
-    els.memberForm?.reset();
-    if (els.memberPreview) els.memberPreview.src = "./assets/avatar.png";
-    setMemberStatus("Miembro agregado. Ya aparecerá en la pantalla pública.", "success");
+    const wasEditing = !!state.editingPersonId;
+    clearMemberForm();
+    setMemberStatus(wasEditing ? "Miembro actualizado." : "Miembro agregado. Ya aparecerá en la pantalla pública.", "success");
     await loadPeopleIndex();
     renderAllFromCache();
   } catch (e) {
@@ -445,6 +476,36 @@ function imageFileToDataUrl(file) {
   });
 }
 
+function handleMemberDirectoryClick(event) {
+  const btn = event.target.closest?.("[data-edit-person]");
+  if (!btn) return;
+  const personId = btn.getAttribute("data-edit-person") || "";
+  const person = state.peopleById.get(personId);
+  if (!person) return;
+
+  state.editingPersonId = personId;
+  if (els.memberName) els.memberName.value = person.name || "";
+  if (els.memberRole) els.memberRole.value = (person.roles || []).join(", ") || person.role || "";
+  if (els.memberSection) els.memberSection.value = person.sectionLabel || "";
+  if (els.memberSubarea) els.memberSubarea.value = person.subarea || "";
+  if (els.memberTags) els.memberTags.value = (person.tags || []).join(", ");
+  if (els.memberPhotoUrl) els.memberPhotoUrl.value = person.photoUrl || "";
+  if (els.memberPhotoFile) els.memberPhotoFile.value = "";
+  if (els.memberPreview) els.memberPreview.src = person.photo || "./assets/avatar.png";
+  if (els.memberSubmit) els.memberSubmit.textContent = "Guardar cambios";
+  if (els.memberCancelEdit) els.memberCancelEdit.hidden = false;
+  setMemberStatus(`Editando ${person.name}.`, "");
+  els.memberName?.focus?.();
+}
+
+function clearMemberForm() {
+  state.editingPersonId = "";
+  els.memberForm?.reset();
+  if (els.memberPreview) els.memberPreview.src = "./assets/avatar.png";
+  if (els.memberSubmit) els.memberSubmit.textContent = "Agregar miembro";
+  if (els.memberCancelEdit) els.memberCancelEdit.hidden = true;
+}
+
 function renderMemberDirectory() {
   if (!els.memberDirectory) return;
   const people = Array.from(state.peopleById.values()).sort((a, b) =>
@@ -457,6 +518,7 @@ function renderMemberDirectory() {
         <strong>${escapeHtml(p.name)}</strong>
         <span>${escapeHtml(p.role || p.sectionLabel || p.personId)}</span>
       </div>
+      <button class="miniBtn" type="button" data-edit-person="${escapeAttr(p.personId)}">Editar</button>
     </div>
   `).join("");
 }

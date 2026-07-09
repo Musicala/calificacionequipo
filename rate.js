@@ -143,6 +143,7 @@ async function loadDynamicTeamMembers() {
         subarea: d.subarea || "",
         tags: Array.isArray(d.tags) ? d.tags : [],
         photo: d.photoDataUrl || d.photoUrl || "",
+        _dynamic: true,
       });
     });
     return people;
@@ -206,13 +207,25 @@ function mergePeople(list) {
     }
 
     // Merge name: preferir el más largo (suele ser el completo)
+    if (p._dynamic) {
+      cur.name = p.name || cur.name;
+      cur.photo = p.photo || cur.photo;
+      cur.roles = [];
+      cur.tags = [];
+      cur.section = p.section || "";
+      cur.sectionLabel = p.sectionLabel || "";
+      cur.subarea = p.subarea || "";
+      cur._sections = new Set();
+      cur._subareas = new Set();
+    }
+
     const nameA = String(cur.name || "").trim();
     const nameB = String(p.name || "").trim();
-    if (nameB && (!nameA || nameB.length > nameA.length)) cur.name = nameB;
+    if (!p._dynamic && nameB && (!nameA || nameB.length > nameA.length)) cur.name = nameB;
 
     // Merge photo: preferir la primera real (no avatar fallback)
     const isFallback = (x) => String(x || "").includes("avatar.png");
-    if (p.photo && (isFallback(cur.photo) && !isFallback(p.photo))) cur.photo = p.photo;
+    if (p._dynamic || (p.photo && (isFallback(cur.photo) && !isFallback(p.photo)))) cur.photo = p.photo;
 
     // Roles únicos
     if (p.role) cur.roles.push(p.role);
